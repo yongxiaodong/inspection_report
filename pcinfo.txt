@@ -1,0 +1,6 @@
+10.102.11.141 22 root suma_1q2w3e$R BO服务器
+10.102.11.141 22 root suma_1q2w3e$R BO服务器
+10.102.11.141 22 root suma_1q2w3e$R BO服务器
+10.102.11.141 22 root suma_1q2w3e$R BO服务器
+10.102.11.139 22 root suma_1q2w3e$R 数据库
+10.102.11.139 22 root suma_1q2w3e$R 数据库
