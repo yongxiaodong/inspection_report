@@ -1,24 +1,14 @@
-class Dog:
-    def __init__(self, name, age):
-        self.name = name
-        self.age = age
-    def sit(self):
-        return (f'{self.name} sit')
+import asyncio
 
+def hello_world(loop):
+    print('Hello World')
+    loop.stop()
 
-    def roll_over(self):
-        return (f'{self.name} roll over')
+loop = asyncio.get_event_loop()
 
+# Schedule a call to hello_world()
+loop.call_soon(hello_world, loop)
 
-class Mache_dog(Dog):
-    def __init__(self, name, age):
-        super().__init__(name, age)
-    def roll_over(self):
-        return ('mache_dog can not roll over')
-
-
-dog = Dog('qiao ba','20')
-print(dog.roll_over())
-
-mache_dog = Mache_dog('qiao ba2', '21')
-print(mache_dog.roll_over())
+# Blocking call interrupted by loop.stop()
+loop.run_forever()
+loop.close()

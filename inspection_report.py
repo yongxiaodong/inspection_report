@@ -11,10 +11,10 @@ import shutil
 from multiprocessing import Pool
 
 logging.basicConfig(filename='debug.txt', format='[%(levelname)s %(asctime)s] %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S', level=logging.ERROR, filemode='w')
+                    datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO, filemode='a')
 
 
-class Check_dir_status:
+class Check_dir_status():
     def __init__(self, target_dir):
         self.target_dir = target_dir
 
@@ -29,15 +29,24 @@ class Check_dir_status:
 
 class Basic_config:
     """该类初始化一些配置"""
+
     def __init__(self, config_file='config.yml'):
         self.config_file = config_file
-        #加载config.yml
+        # 加载config.yml
         try:
             with open(self.config_file, 'r', encoding='utf-8') as f:
                 self.config = yaml.load(f.read(), Loader=yaml.FullLoader)
         except Exception as e:
             logging.error(f'加载配置文件{self.config_file}失败,message:{e}')
 
+    def recursion_delete_file(self, dir):
+        allfile = os.listdir(dir)
+        for file in allfile:
+            file = os.path.join(dir, file)
+            if os.path.isdir(file):
+                self.recursion_delete_file(file)
+            else:
+                os.remove(file)
 
     def get_config(self):
         return self.config
@@ -81,17 +90,39 @@ class Basic_config:
         except Exception as e:
             logging.error(f'获取templates_path失败,message:{e}')
 
+    def get_temp_dir(self):
+        try:
+            temp_dir = config['temp_dir']
+            if not os.path.exists(temp_dir):
+                logging.info(f'开始创建{temp_dir}目录')
+                os.mkdir(temp_dir)
+            else:
+                logging.info(f'开始清空{temp_dir}目录')
+                self.recursion_delete_file(temp_dir)
+            return temp_dir
+        except Exception as e:
+            logging.error(f'初始化get_temp_dir函数失败,message:{e}')
+
+    def get_temp_templates(self):
+        try:
+            temp_templates = config['temp_templates']
+            if not os.path.exists(temp_templates):
+                logging.info(f'开始创建{temp_templates}目录')
+                os.mkdir(temp_templates)
+            return temp_templates
+        except Exception as e:
+            logging.error(f'初始化get_temp_templates函数失败,message:{e}')
+
 
 class Ssh:
     """该类执行命令并返回结果"""
 
-    def __init__(self, ip, port, user, password, command, remarks='', ssh_timeout=5, execute_timeout=20):
+    def __init__(self, ip, port, user, password, command, ssh_timeout=5, execute_timeout=20):
         self.ip = ip
         self.port = port
         self.user = user
         self.password = password
         self.command = command
-        self.remarks = remarks
         self.ssh_timeout = ssh_timeout
         self.execute_timeout = execute_timeout
 
@@ -103,7 +134,7 @@ class Ssh:
             for command, filename in self.command.items():
                 stdin, stdout, stderr = ssh.exec_command(command, timeout=self.execute_timeout)
                 response_out = stdout.read().decode('utf-8')
-                yield response_out, filename
+                yield response_out, filename, command
         except paramiko.ssh_exception.AuthenticationException as e:
             logging.error(f'{self.ip},密码验证错误', {e})
         except socket.timeout as e:
@@ -116,19 +147,43 @@ class Ssh:
 
 class Generator_md(Ssh):
     """操作Markdown、控制生成Markdown、Markdown转HTML"""
-    def __init__(self, ip, port, user, password, command, target_dir, templates_path, remarks='', ssh_timeout=5,
+
+    def __init__(self, ip, port, user, password, command, target_dir, templates_path, temp_dir, temp_templates,
+                 remarks='', ssh_timeout=5,
                  execute_timeout=20):
-        super().__init__(ip, port, user, password, command, remarks, ssh_timeout, execute_timeout)
+        super().__init__(ip, port, user, password, command, ssh_timeout, execute_timeout)
         self.target_dir = target_dir
         self.templates_path = templates_path
+        self.temp_dir = temp_dir
+        self.temp_templates = temp_templates
+        self.remarks = remarks
 
     def get_data(self):
-        for data, filename in self.execute_command():
+        for data, filename, command in self.execute_command():
             data = re.sub('\n', '<br>', data)
             data = re.sub(' ', '&nbsp;', data)
-            self.generator_md(data, filename)
+            self.generator_normal_md(data, filename, command)
 
-    def generator_md(self, data, filename):
+    def generator_normal_md(self, data, filename, command):
+        try:
+            status = 0
+            if data:
+                if not os.path.exists(f'{self.temp_dir}/{filename}.md'):
+                    if os.path.exists(f'{self.temp_templates}/{filename}.md'):
+                        shutil.copy(f'{self.temp_templates}/{filename}.md', f'{self.temp_dir}/{filename}.md')
+                        status = 1
+                    else:
+                        logging.error(f'当前处理服务器:{self.ip},从{self.temp_templates}复制模板{filename}.md失败')
+                else:
+                    status = 1
+                if status == 1:
+                    with open(f'{self.temp_dir}/{filename}.md', 'a', encoding='utf-8') as f:
+                        data = re.sub('\n', '<br>', data)
+                        f.write(f'{self.ip} | {data} | {self.remarks} | {command}' + '\n')
+        except Exception as e:
+            logging.error(f'generator_normal_md函数执行错误,message：{e}')
+
+    def generator_abnormal_md(self, data, filename):
         try:
             status = 0
             if data:
@@ -171,25 +226,30 @@ class Generator_md(Ssh):
 
 
 if __name__ == '__main__':
+    logging.info('开始执行')
     start_time = time.time()
     basic_config = Basic_config()
     config = basic_config.get_config()
     out_md_dir = basic_config.get_out_md_dir()
     templates_path = basic_config.get_templates_path()
+    temp_dir = basic_config.get_temp_dir()
+    temp_templates = basic_config.get_temp_templates()
+
     command = config['command']
     pcinfo = basic_config.get_pcinfo()
     p = Pool(4)
     for pcinfo in pcinfo:
         pcinfo = pcinfo.split()
         print(pcinfo)
-        if len(pcinfo) == 4:
-            generator = Generator_md(pcinfo[0], pcinfo[1], pcinfo[2], pcinfo[3], command, out_md_dir, templates_path, remarks=pcinfo[4])
+        if len(pcinfo) == 5:
+            generator = Generator_md(pcinfo[0], pcinfo[1], pcinfo[2], pcinfo[3], command, out_md_dir, templates_path,
+                                     temp_dir, temp_templates, remarks=pcinfo[4])
         else:
-            generator = Generator_md(pcinfo[0], pcinfo[1], pcinfo[2], pcinfo[3], command, out_md_dir, templates_path)
+            generator = Generator_md(pcinfo[0], pcinfo[1], pcinfo[2], pcinfo[3], command, out_md_dir, templates_path,
+                                     temp_dir, temp_templates, )
         p.apply_async(generator.get_data, args=())
-        # generator.get_data()
     p.close()
     p.join()
     endtime = time.time()
     print(f'耗时:{start_time - endtime}')
-
+    logging.info(f'耗时:{start_time - endtime}')
