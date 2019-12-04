@@ -55,7 +55,11 @@ class Basic_config:
         try:
             out_md_dir = config['out_md_dir']
             if not os.path.exists(out_md_dir):
+                logging.info(f'创建{out_md_dir}目录')
                 os.mkdir(out_md_dir)
+            else:
+                logging.info(f'清空{out_md_dir}目录')
+                self.recursion_delete_file(out_md_dir)
             return out_md_dir
         except KeyError as e:
             logging.error(f'获取key:out_md_dir失败，message:{e}')
@@ -67,6 +71,9 @@ class Basic_config:
             out_html_dir = config['out_html_dir']
             if not os.path.exists(out_html_dir):
                 os.mkdir(out_html_dir)
+            else:
+                logging.info(f'清空{out_html_dir}目录')
+                self.recursion_delete_file(out_html_dir)
             return out_html_dir
         except KeyError as e:
             logging.error(f'获取key:out_html_dir，message:{e}')
@@ -76,10 +83,10 @@ class Basic_config:
     def get_pcinfo(self):
         # 获取pcinfo
         try:
-            pcinfo = config['pcinfo']
-            with open(pcinfo, 'r', encoding='utf-8') as f:
-                pcinfo = f.read()
-                return pcinfo.split('\n')
+            pc_info = config['pcinfo']
+            with open(pc_info, 'r', encoding='utf-8') as f:
+                pc_info = f.read()
+                return pc_info.split('\n')
         except Exception as e:
             logging.error(f'加载{pcinfo}文件失败,message:{e}')
 
@@ -146,9 +153,9 @@ class Ssh:
 
 
 class Generator_md(Ssh):
-    """操作Markdown、控制生成Markdown、Markdown转HTML"""
+    """操作Markdown、控制生成Markdown"""
 
-    def __init__(self, ip, port, user, password, command, target_dir, templates_path, temp_dir, temp_templates,
+    def __init__(self, ip, port, user, password, command, target_dir, templates_path, temp_dir, temp_templates, parse_rule,
                  remarks='', ssh_timeout=5,
                  execute_timeout=20):
         super().__init__(ip, port, user, password, command, ssh_timeout, execute_timeout)
@@ -157,12 +164,18 @@ class Generator_md(Ssh):
         self.temp_dir = temp_dir
         self.temp_templates = temp_templates
         self.remarks = remarks
+        self.parse_rule = parse_rule
+        self.command = command
+        self.ip = ip
+        self.remarks = remarks
 
     def get_data(self):
         for data, filename, command in self.execute_command():
+            self.generator_abnormal_md(data, filename, command)
             data = re.sub('\n', '<br>', data)
             data = re.sub(' ', '&nbsp;', data)
             self.generator_normal_md(data, filename, command)
+
 
     def generator_normal_md(self, data, filename, command):
         try:
@@ -183,47 +196,102 @@ class Generator_md(Ssh):
         except Exception as e:
             logging.error(f'generator_normal_md函数执行错误,message：{e}')
 
-    def generator_abnormal_md(self, data, filename):
+    def generator_a(self, filename, max_value):
+        if not os.path.exists(f'{self.temp_dir}/a_{filename}.md'):
+            with open(f'{self.templates_path}/{filename}.md', 'r', encoding='utf-8')as f, open(
+                    f'{self.temp_dir}/a_{filename}.md', 'w', encoding='utf-8') as f2:
+                f2.write(f.read().format(max_value))
+#异常分析并生成md
+    def generator_abnormal_md(self, data, filename, command):
         try:
-            status = 0
-            if data:
-                if not os.path.exists(f'{self.target_dir}/{filename}.md'):
-                    if os.path.exists(f'{self.templates_path}/{filename}.md'):
-                        shutil.copy(f'{self.templates_path}/{filename}.md', f'{self.target_dir}/{filename}.md')
-                        status = 1
+            if data and command in self.parse_rule:
+                max_value = float(self.parse_rule[command][0])
+                description = self.parse_rule[command][1]
+                if command == 'uptime':
+                    self.generator_a(filename, max_value)
+                    data = list(map(float,data.strip().split(':')[-1].split(',')))
+                    if data[0] > max_value or data[1] > max_value or data[2] > max_value:
+                        with open(f'{self.temp_dir}/a_{filename}.md','a',encoding='utf-8') as f:
+                            f.write(description.format(self.ip, data) + '\n')
+                elif command == 'df -h':
+                    result = ''
+                    self.generator_a(filename, max_value)
+                    data = data.split('\n')
+                    for line in data[1:]:
+                        if line:
+                            line = line.split()
+                            use_rate = line[-2].split('%')[0]
+                            mount_point = line[-1]
+                            if float(use_rate) > max_value:
+                                result = result + f'{mount_point} : {use_rate}%<br>'
+                    if result:
+                        with open(f'{self.temp_dir}/a_{filename}.md','a',encoding='utf-8') as f:
+                            f.write(description.format(self.ip, result) + '\n')
+                elif command == 'free -m':
+                    self.generator_a(filename, max_value)
+                    if 'available' in data.split('\n')[0]:
+                        line = list(map(int, data.split('\n')[1].split()[1:]))
+                        use_rate = float((1 - line[5] / line[0]) * 100)
                     else:
-                        logging.error(f'当前处理ip:{self.ip},从{self.templates_path}获取模板{filename}.md失败')
-                else:
-                    status = 1
-                if status == 1:
-                    with open(f'{self.target_dir}/{filename}.md', 'a', encoding='utf-8') as f:
-                        data = re.sub('\n', '<br>', data)
-                        f.write(f'{self.ip} | {data}' + '\n')
+                        line = list(map(int, data.split('\n')[1].split()[1:]))
+                        use_rate = float((1 - (line[2] + line[4] + line[5]) / line[0]) * 100)
+                    if use_rate > max_value:
+                        use_rate = "%.1f" % use_rate + '%'
+                        with open(f'{self.temp_dir}/a_{filename}.md', 'a', encoding='utf-8') as f:
+                            f.write(description.format(self.ip, use_rate) + '\n')
         except Exception as e:
             logging.error(e)
 
-    # def data_parser(self):
-    #     if self.filename == self.configfile['judge1']:
-    #     diskname = succ.split()
-    #     reresu = re.findall('\d{1,3}%', succ)
-    #     usedisk = list(map(self.delete_percent, reresu))
-    #     if reresu and int(usedisk[0]) > self.configfile['diskthreshold']:
-    #         write_disk_name += '{0} : {1}<br>'.format(diskname[-1], diskname[-2])
-    #         idx += 1
+
+# 数据汇总，将temp中的md 集中生成为2个MD，并转换为html
+class Summary_data:
+    def __init__(self, *args):
+        self.temp_dir = args[0]
+        self.target_dir = args[1]
+        self.alldata_name = args[2]
+        self.parse_rule = args[3]
+        self.command = args[4]
+        self.data_name = args[5]
+        self.html_dir = args[6]
+        self.templates_path = args[7]
+
+    def summary_normal(self):
+        try:
+            for filename in command.values():
+                with open(f'{self.temp_dir}/{filename}.md','r',encoding='utf-8') as f,open(f'{self.target_dir}/{self.alldata_name}.md','a',encoding='utf-8') as f2:
+                    f2.write(f.read()+'\n')
+        except Exception as e:
+            logging.error(f'汇总md错误,message:{e}')
+    def summary_abnormal(self):
+        for key in self.parse_rule:
+            filename = command[key] +'.md'
+            with open(f'{self.temp_dir}/a_{filename}','r',encoding='utf-8')as f, open(f'{self.target_dir}/{self.data_name}.md','a',encoding='utf-8') as f2:
+                data = f.read()
+                result = re.findall(r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b", data.split('\n')[-2])
+                if result:
+                    f2.write(data + '\n')
+                else:
+                    f2.write(data)
+                    f2.write('所有服务器检查正常|' + '\n\n')
 
     def md_to_html(self):
         try:
             exts = ['markdown.extensions.extra', 'markdown.extensions.codehilite', 'markdown.extensions.tables',
                     'markdown.extensions.toc']
-            with open('内存.md', 'r', encoding='utf-8') as f:
-                markdownText = f.read()
-                h = markdown.markdown(markdownText, output_format='html5', extensions=exts)
-                print(h)
-                with open('内存.html', 'w', encoding='utf-8') as f1:
-                    f1.write(h)
+            allmd = [self.alldata_name, self.data_name]
+            print(allmd)
+            with open(f'{self.templates_path}/css.css','r',encoding='utf-8') as css:
+                css = css.read()
+            with open(f'{self.templates_path}/frame.html','r', encoding='utf-8') as frame:
+                frame = frame.read()
+            for filename in allmd:
+                with open(f'{self.target_dir}/{filename}.md', 'r', encoding='utf-8') as f:
+                    markdownText = f.read()
+                    h = markdown.markdown(markdownText, output_format='html5', extensions=exts)
+                    with open(f'{self.html_dir}/{filename}.html', 'w', encoding='utf-8') as f1:
+                        f1.write(frame.format(css, h, 'a.html'))
         except Exception as e:
             logging.error(f'Md_to_html异常,{e}')
-
 
 if __name__ == '__main__':
     logging.info('开始执行')
@@ -234,22 +302,29 @@ if __name__ == '__main__':
     templates_path = basic_config.get_templates_path()
     temp_dir = basic_config.get_temp_dir()
     temp_templates = basic_config.get_temp_templates()
-
+    html_dir = basic_config.get_out_html_dir()
+    alldata_name = config.get('alldata_name')
     command = config['command']
+    parse_rule = config['parser_rule']
+    data_name = config['data_name']
     pcinfo = basic_config.get_pcinfo()
     p = Pool(4)
     for pcinfo in pcinfo:
         pcinfo = pcinfo.split()
         print(pcinfo)
         if len(pcinfo) == 5:
-            generator = Generator_md(pcinfo[0], pcinfo[1], pcinfo[2], pcinfo[3], command, out_md_dir, templates_path,
-                                     temp_dir, temp_templates, remarks=pcinfo[4])
+            generator_md = Generator_md(pcinfo[0], pcinfo[1], pcinfo[2], pcinfo[3], command, out_md_dir, templates_path,
+                                     temp_dir, temp_templates, parse_rule, remarks=pcinfo[4])
         else:
-            generator = Generator_md(pcinfo[0], pcinfo[1], pcinfo[2], pcinfo[3], command, out_md_dir, templates_path,
-                                     temp_dir, temp_templates, )
-        p.apply_async(generator.get_data, args=())
+            generator_md = Generator_md(pcinfo[0], pcinfo[1], pcinfo[2], pcinfo[3], command, out_md_dir, templates_path,
+                                     temp_dir, temp_templates, parse_rule)
+        p.apply_async(generator_md.get_data, args=())
     p.close()
     p.join()
+    summary_data = Summary_data(temp_dir,out_md_dir, alldata_name, parse_rule, command, data_name, html_dir, templates_path)
+    summary_data.summary_normal()
+    summary_data.summary_abnormal()
+    summary_data.md_to_html()
     endtime = time.time()
-    print(f'耗时:{start_time - endtime}')
-    logging.info(f'耗时:{start_time - endtime}')
+    print(f'耗时:{ endtime- start_time}')
+    logging.info(f'耗时:{endtime - start_time}')

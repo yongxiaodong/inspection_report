@@ -1,5 +1,5 @@
 command:
-  w:
+  uptime:
     CPU使用情况
   free -m:
     内存使用情况
@@ -10,14 +10,22 @@ command:
 
 
 parser_rule:
+  uptime:
+    - 5
+    - '{0} | {1} | 异常 | CPU利用率过高'
   df -h:
-    - 80
+    - 60
     - '{0} | {1} | 异常 | 磁盘空间利用率过高'
+  free -m:
+    - 80
+    - '{0} | {1} | 异常 | 内存使用率过高'
 
 
 out_md_dir: './md_dir'
-out_html_dir: 'html_dir'
+out_html_dir: './html_dir'
 pcinfo: 'pcinfo.txt'
 templates: './templates'
 temp_dir: './temp'
 temp_templates: './templates/temp'
+alldata_name: '详细数据记录'
+data_name: '巡检记录'

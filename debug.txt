@@ -1,48 +1,83 @@
-[INFO 2019-12-01 20:18:46] 开始执行
-[INFO 2019-12-01 20:18:46] 开始清空./temp目录
-[INFO 2019-12-01 20:18:47] Connected (version 2.0, client OpenSSH_7.4)
-[INFO 2019-12-01 20:18:47] Authentication (password) successful!
-[ERROR 2019-12-01 20:18:47] generator_normal_md函数执行错误,message：name 'command' is not defined
-[ERROR 2019-12-01 20:18:47] generator_normal_md函数执行错误,message：name 'command' is not defined
-[ERROR 2019-12-01 20:18:47] generator_normal_md函数执行错误,message：name 'command' is not defined
-[INFO 2019-12-01 20:18:47] Connected (version 2.0, client OpenSSH_7.4)
-[INFO 2019-12-01 20:18:49] Authentication (password) successful!
-[ERROR 2019-12-01 20:18:50] generator_normal_md函数执行错误,message：name 'command' is not defined
-[ERROR 2019-12-01 20:18:51] generator_normal_md函数执行错误,message：name 'command' is not defined
-[ERROR 2019-12-01 20:18:51] generator_normal_md函数执行错误,message：name 'command' is not defined
-[INFO 2019-12-01 20:18:52] 耗时:-5.102353811264038
-[INFO 2019-12-01 20:19:00] 开始执行
-[INFO 2019-12-01 20:19:00] 开始清空./temp目录
-[INFO 2019-12-01 20:19:01] Connected (version 2.0, client OpenSSH_7.4)
-[INFO 2019-12-01 20:19:01] Authentication (password) successful!
-[INFO 2019-12-01 20:19:01] Connected (version 2.0, client OpenSSH_7.4)
-[INFO 2019-12-01 20:19:03] Authentication (password) successful!
-[INFO 2019-12-01 20:19:04] 耗时:-3.8806228637695312
-[INFO 2019-12-01 20:19:17] 开始执行
-[INFO 2019-12-01 20:19:17] 开始清空./temp目录
-[INFO 2019-12-01 20:19:17] Connected (version 2.0, client OpenSSH_7.4)
-[INFO 2019-12-01 20:19:17] Authentication (password) successful!
-[INFO 2019-12-01 20:19:18] Connected (version 2.0, client OpenSSH_7.4)
-[INFO 2019-12-01 20:19:20] Authentication (password) successful!
-[INFO 2019-12-01 20:19:24] 耗时:-7.121953010559082
-[INFO 2019-12-01 20:20:11] 开始执行
-[INFO 2019-12-01 20:20:11] 开始清空./temp目录
-[INFO 2019-12-01 20:20:11] Connected (version 2.0, client OpenSSH_7.4)
-[INFO 2019-12-01 20:20:11] Authentication (password) successful!
-[INFO 2019-12-01 20:20:12] Connected (version 2.0, client OpenSSH_7.4)
-[INFO 2019-12-01 20:20:13] Authentication (password) successful!
-[INFO 2019-12-01 20:20:16] 耗时:-5.016584396362305
-[INFO 2019-12-01 20:20:26] 开始执行
-[INFO 2019-12-01 20:20:26] 开始清空./temp目录
-[INFO 2019-12-01 20:20:27] Connected (version 2.0, client OpenSSH_7.4)
-[INFO 2019-12-01 20:20:27] Authentication (password) successful!
-[INFO 2019-12-01 20:20:28] Connected (version 2.0, client OpenSSH_7.4)
-[INFO 2019-12-01 20:20:30] Authentication (password) successful!
-[INFO 2019-12-01 20:20:44] 耗时:-17.82632350921631
-[INFO 2019-12-01 20:20:55] 开始执行
-[INFO 2019-12-01 20:20:55] 开始清空./temp目录
-[INFO 2019-12-01 20:20:55] Connected (version 2.0, client OpenSSH_7.4)
-[INFO 2019-12-01 20:20:55] Authentication (password) successful!
-[INFO 2019-12-01 20:20:56] Connected (version 2.0, client OpenSSH_7.4)
-[INFO 2019-12-01 20:20:59] Authentication (password) successful!
-[INFO 2019-12-01 20:21:02] 耗时:-7.0321924686431885
+[INFO 2019-12-02 16:35:47] 开始执行
+[INFO 2019-12-02 16:35:47] 清空./md_dir目录
+[INFO 2019-12-02 16:35:47] 开始清空./temp目录
+[INFO 2019-12-02 16:35:48] Connected (version 2.0, client OpenSSH_5.3)
+[INFO 2019-12-02 16:35:48] Connected (version 2.0, client OpenSSH_6.6.1)
+[INFO 2019-12-02 16:35:48] Connected (version 2.0, client OpenSSH_6.6.1)
+[INFO 2019-12-02 16:35:48] Authentication (password) successful!
+[INFO 2019-12-02 16:35:48] Authentication (password) successful!
+[INFO 2019-12-02 16:35:48] Authentication (password) successful!
+[ERROR 2019-12-02 16:35:49] Md_to_html异常,'gbk' codec can't decode byte 0x8f in position 445: illegal multibyte sequence
+[INFO 2019-12-02 16:35:49] 耗时:1.3692882061004639
+[INFO 2019-12-02 16:36:17] 开始执行
+[INFO 2019-12-02 16:36:17] 清空./md_dir目录
+[INFO 2019-12-02 16:36:17] 开始清空./temp目录
+[INFO 2019-12-02 16:36:18] Connected (version 2.0, client OpenSSH_6.6.1)
+[INFO 2019-12-02 16:36:18] Connected (version 2.0, client OpenSSH_5.3)
+[INFO 2019-12-02 16:36:18] Connected (version 2.0, client OpenSSH_6.6.1)
+[INFO 2019-12-02 16:36:18] Authentication (password) successful!
+[INFO 2019-12-02 16:36:18] Authentication (password) successful!
+[INFO 2019-12-02 16:36:18] Authentication (password) successful!
+[ERROR 2019-12-02 16:36:19] Md_to_html异常,Replacement index 2 out of range for positional args tuple
+[INFO 2019-12-02 16:36:19] 耗时:1.7186520099639893
+[INFO 2019-12-02 16:37:07] 开始执行
+[INFO 2019-12-02 16:37:07] 清空./md_dir目录
+[INFO 2019-12-02 16:37:07] 开始清空./temp目录
+[INFO 2019-12-02 16:37:09] Connected (version 2.0, client OpenSSH_5.3)
+[INFO 2019-12-02 16:37:09] Connected (version 2.0, client OpenSSH_6.6.1)
+[INFO 2019-12-02 16:37:10] Authentication (password) successful!
+[INFO 2019-12-02 16:37:10] Authentication (password) successful!
+[INFO 2019-12-02 16:37:10] Connected (version 2.0, client OpenSSH_6.6.1)
+[INFO 2019-12-02 16:37:10] Authentication (password) successful!
+[INFO 2019-12-02 16:38:15] 开始执行
+[INFO 2019-12-02 16:38:15] 清空./md_dir目录
+[INFO 2019-12-02 16:38:15] 开始清空./temp目录
+[INFO 2019-12-02 16:38:16] Connected (version 2.0, client OpenSSH_5.3)
+[INFO 2019-12-02 16:38:16] Connected (version 2.0, client OpenSSH_6.6.1)
+[INFO 2019-12-02 16:38:16] Connected (version 2.0, client OpenSSH_6.6.1)
+[INFO 2019-12-02 16:38:16] Authentication (password) successful!
+[INFO 2019-12-02 16:38:16] Authentication (password) successful!
+[INFO 2019-12-02 16:38:16] Authentication (password) successful!
+[INFO 2019-12-02 16:38:17] 耗时:1.6202728748321533
+[INFO 2019-12-02 16:41:44] 开始执行
+[INFO 2019-12-02 16:41:44] 清空./md_dir目录
+[INFO 2019-12-02 16:41:44] 开始清空./temp目录
+[INFO 2019-12-02 16:41:45] Connected (version 2.0, client OpenSSH_6.6.1)
+[INFO 2019-12-02 16:41:45] Connected (version 2.0, client OpenSSH_5.3)
+[INFO 2019-12-02 16:41:45] Connected (version 2.0, client OpenSSH_6.6.1)
+[INFO 2019-12-02 16:41:45] Authentication (password) successful!
+[INFO 2019-12-02 16:41:45] Authentication (password) successful!
+[INFO 2019-12-02 16:41:45] Authentication (password) successful!
+[INFO 2019-12-02 16:41:46] 耗时:1.6407036781311035
+[INFO 2019-12-02 16:42:14] 开始执行
+[INFO 2019-12-02 16:42:14] 清空./md_dir目录
+[INFO 2019-12-02 16:42:14] 开始清空./temp目录
+[INFO 2019-12-02 16:42:15] Connected (version 2.0, client OpenSSH_5.3)
+[INFO 2019-12-02 16:42:15] Connected (version 2.0, client OpenSSH_6.6.1)
+[INFO 2019-12-02 16:42:15] Connected (version 2.0, client OpenSSH_6.6.1)
+[INFO 2019-12-02 16:42:15] Authentication (password) successful!
+[INFO 2019-12-02 16:42:15] Authentication (password) successful!
+[INFO 2019-12-02 16:42:15] Authentication (password) successful!
+[INFO 2019-12-02 16:42:16] 耗时:1.4115636348724365
+[INFO 2019-12-02 16:47:57] 开始执行
+[INFO 2019-12-02 16:47:57] 清空./md_dir目录
+[INFO 2019-12-02 16:47:57] 开始清空./temp目录
+[INFO 2019-12-02 16:47:57] 清空./html_dir目录
+[INFO 2019-12-02 16:47:58] Connected (version 2.0, client OpenSSH_6.6.1)
+[INFO 2019-12-02 16:47:58] Connected (version 2.0, client OpenSSH_5.3)
+[INFO 2019-12-02 16:47:58] Connected (version 2.0, client OpenSSH_6.6.1)
+[INFO 2019-12-02 16:47:58] Authentication (password) successful!
+[INFO 2019-12-02 16:47:58] Authentication (password) successful!
+[INFO 2019-12-02 16:47:58] Authentication (password) successful!
+[INFO 2019-12-02 16:47:59] 耗时:1.5429003238677979
+[INFO 2019-12-02 16:49:21] 开始执行
+[INFO 2019-12-02 16:49:21] 清空./md_dir目录
+[INFO 2019-12-02 16:49:21] 开始清空./temp目录
+[INFO 2019-12-02 16:49:21] 清空./html_dir目录
+[INFO 2019-12-02 16:49:22] Connected (version 2.0, client OpenSSH_6.6.1)
+[INFO 2019-12-02 16:49:22] Connected (version 2.0, client OpenSSH_5.3)
+[INFO 2019-12-02 16:49:22] Connected (version 2.0, client OpenSSH_6.6.1)
+[INFO 2019-12-02 16:49:22] Authentication (password) successful!
+[INFO 2019-12-02 16:49:22] Authentication (password) successful!
+[INFO 2019-12-02 16:49:22] Authentication (password) successful!
+[INFO 2019-12-02 16:49:23] 耗时:1.7937140464782715
