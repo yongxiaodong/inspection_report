@@ -1,3 +1,1 @@
-10.102.11.139 22 root suma_1q2w3e$R test1
-10.102.11.141 22 root suma_1q2w3e$R test2
-10.102.11.139 22 root suma_1q2w3e$R test1
+10.102.11.141 22 root 1234567 DB1

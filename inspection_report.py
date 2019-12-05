@@ -150,11 +150,12 @@ class Ssh:
             logging.error(f'{self.ip},端口链接失败,{e}')
         except Exception as e:
             logging.error(f'未知异常,{traceback.print_exc()},{e}')
+        finally:
+            ssh.close()
 
 
 class Generator_md(Ssh):
     """操作Markdown、控制生成Markdown"""
-
     def __init__(self, ip, port, user, password, command, target_dir, templates_path, temp_dir, temp_templates, parse_rule,
                  remarks='', ssh_timeout=5,
                  execute_timeout=20):
@@ -213,7 +214,7 @@ class Generator_md(Ssh):
                     if data[0] > max_value or data[1] > max_value or data[2] > max_value:
                         with open(f'{self.temp_dir}/a_{filename}.md','a',encoding='utf-8') as f:
                             f.write(description.format(self.ip, data) + '\n')
-                elif command == 'df -h':
+                elif command == 'df -hP':
                     result = ''
                     self.generator_a(filename, max_value)
                     data = data.split('\n')
@@ -240,7 +241,7 @@ class Generator_md(Ssh):
                         with open(f'{self.temp_dir}/a_{filename}.md', 'a', encoding='utf-8') as f:
                             f.write(description.format(self.ip, use_rate) + '\n')
         except Exception as e:
-            logging.error(e)
+            logging.error(f'异常分析并生成MD错误,command:{command},filename:{filename}message:{e}')
 
 
 # 数据汇总，将temp中的md 集中生成为2个MD，并转换为html
@@ -262,9 +263,18 @@ class Summary_data:
                     f2.write(f.read()+'\n')
         except Exception as e:
             logging.error(f'汇总md错误,message:{e}')
-    def summary_abnormal(self):
-        for key in self.parse_rule:
-            filename = command[key] +'.md'
+
+    def summary_abnormal(self, pc_count, alldata_name):
+        ivo = [x for x in self.parse_rule]
+        ivo.insert(0, '巡检报告')
+        for key in ivo:
+            if key != '巡检报告':
+                filename = command[key] +'.md'
+            else:
+                filename = '巡检报告.md'
+                with open(f'{self.templates_path}/{filename}','r',encoding='utf-8') as f,open(f'{self.temp_dir}/a_{filename}','w',encoding='utf-8') as f2:
+                    f2.write(f.read().format(time.strftime('%Y/%m/%d  %H:%M:%S'),pc_count, alldata_name))
+
             with open(f'{self.temp_dir}/a_{filename}','r',encoding='utf-8')as f, open(f'{self.target_dir}/{self.data_name}.md','a',encoding='utf-8') as f2:
                 data = f.read()
                 result = re.findall(r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b", data.split('\n')[-2])
@@ -274,12 +284,11 @@ class Summary_data:
                     f2.write(data)
                     f2.write('所有服务器检查正常|' + '\n\n')
 
-    def md_to_html(self):
+    def md_to_html(self, data_name):
         try:
             exts = ['markdown.extensions.extra', 'markdown.extensions.codehilite', 'markdown.extensions.tables',
                     'markdown.extensions.toc']
             allmd = [self.alldata_name, self.data_name]
-            print(allmd)
             with open(f'{self.templates_path}/css.css','r',encoding='utf-8') as css:
                 css = css.read()
             with open(f'{self.templates_path}/frame.html','r', encoding='utf-8') as frame:
@@ -289,7 +298,7 @@ class Summary_data:
                     markdownText = f.read()
                     h = markdown.markdown(markdownText, output_format='html5', extensions=exts)
                     with open(f'{self.html_dir}/{filename}.html', 'w', encoding='utf-8') as f1:
-                        f1.write(frame.format(css, h, 'a.html'))
+                        f1.write(frame.format(css, h, alldata_name+'.html',data_name+'.html'))
         except Exception as e:
             logging.error(f'Md_to_html异常,{e}')
 
@@ -309,9 +318,9 @@ if __name__ == '__main__':
     data_name = config['data_name']
     pcinfo = basic_config.get_pcinfo()
     p = Pool(4)
+    pc_count = len(pcinfo)
     for pcinfo in pcinfo:
         pcinfo = pcinfo.split()
-        print(pcinfo)
         if len(pcinfo) == 5:
             generator_md = Generator_md(pcinfo[0], pcinfo[1], pcinfo[2], pcinfo[3], command, out_md_dir, templates_path,
                                      temp_dir, temp_templates, parse_rule, remarks=pcinfo[4])
@@ -323,8 +332,8 @@ if __name__ == '__main__':
     p.join()
     summary_data = Summary_data(temp_dir,out_md_dir, alldata_name, parse_rule, command, data_name, html_dir, templates_path)
     summary_data.summary_normal()
-    summary_data.summary_abnormal()
-    summary_data.md_to_html()
+    summary_data.summary_abnormal(pc_count=pc_count, alldata_name=alldata_name)
+    summary_data.md_to_html(data_name)
     endtime = time.time()
     print(f'耗时:{ endtime- start_time}')
     logging.info(f'耗时:{endtime - start_time}')

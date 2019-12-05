@@ -5,4 +5,3 @@ rename = {
 }
 
 a = [x for x in rename]
-print(a)

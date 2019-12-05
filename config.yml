@@ -3,23 +3,20 @@ command:
     CPU使用情况
   free -m:
     内存使用情况
-  df -h:
+  df -hP:
     磁盘使用情况
-
-
 
 
 parser_rule:
   uptime:
     - 5
     - '{0} | {1} | 异常 | CPU利用率过高'
-  df -h:
-    - 60
+  df -hP:
+    - 80
     - '{0} | {1} | 异常 | 磁盘空间利用率过高'
   free -m:
     - 80
     - '{0} | {1} | 异常 | 内存使用率过高'
-
 
 out_md_dir: './md_dir'
 out_html_dir: './html_dir'
