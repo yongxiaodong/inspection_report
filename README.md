@@ -14,4 +14,18 @@
     生成的其他目录：md_dir等是临时文件
 
 > 不需要手动清空临时目录，主程序每次运行前会自动清空这些目录
+
+### 运行依赖
+    python 3
+    import paramiko
+    import traceback
+    import socket
+    import re
+    import markdown
+    import logging
+    import yaml
+    import time
+    import os
+    import shutil
+    from multiprocessing import Pool
     
