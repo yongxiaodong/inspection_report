@@ -1,0 +1,2 @@
+192.168.1.1 22 root passw test1
+192.168.1.2 22 root passw test2
