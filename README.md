@@ -1,3 +1,7 @@
+### 作用
+    自动登陆机器获取CPU、内存、磁盘等数据
+    分析数据自动生成巡检报告，以HTML方式输出
+    
 ### 主要文件介绍：
     inspection_report.py 主程序
     config.yml 配置文件
