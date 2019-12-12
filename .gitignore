@@ -127,4 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+# yxd
+html_dir/
+md_dir/
+temp/
+.idea/
+pcinfo.txt
 debug.txt

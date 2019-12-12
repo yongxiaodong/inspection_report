@@ -8,10 +8,10 @@ import yaml
 import time
 import os
 import shutil
-from multiprocessing import Pool
+import multiprocessing
 
 logging.basicConfig(filename='debug.txt', format='[%(levelname)s %(asctime)s] %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO, filemode='a')
+                    datefmt='%Y-%m-%d %H:%M:%S', level=logging.ERROR, filemode='a')
 
 
 class Check_dir_status():
@@ -124,7 +124,7 @@ class Basic_config:
 class Ssh:
     """该类执行命令并返回结果"""
 
-    def __init__(self, ip, port, user, password, command, ssh_timeout=5, execute_timeout=20):
+    def __init__(self, ip, port, user, password, command, q, ssh_timeout=5, execute_timeout=20):
         self.ip = ip
         self.port = port
         self.user = user
@@ -132,7 +132,7 @@ class Ssh:
         self.command = command
         self.ssh_timeout = ssh_timeout
         self.execute_timeout = execute_timeout
-
+        self.q = q
     def execute_command(self):
         try:
             ssh = paramiko.SSHClient()
@@ -143,23 +143,29 @@ class Ssh:
                 response_out = stdout.read().decode('utf-8')
                 yield response_out, filename, command
         except paramiko.ssh_exception.AuthenticationException as e:
-            logging.error(f'{self.ip},密码验证错误', {e})
+            logging.error(f'{self.ip},密码验证错误，{e}')
+            self.q.put(f'{self.ip}')
         except socket.timeout as e:
             logging.error(f'{self.ip},链接超时,{e}')
+            self.q.put(f'{self.ip}')
         except paramiko.ssh_exception.NoValidConnectionsError as e:
             logging.error(f'{self.ip},端口链接失败,{e}')
+            self.q.put(f'{self.ip}')
         except Exception as e:
             logging.error(f'未知异常,{traceback.print_exc()},{e}')
+            self.q.put(f'{self.ip}')
         finally:
             ssh.close()
 
 
 class Generator_md(Ssh):
     """操作Markdown、控制生成Markdown"""
-    def __init__(self, ip, port, user, password, command, target_dir, templates_path, temp_dir, temp_templates, parse_rule,
+
+    def __init__(self, ip, port, user, password, command, target_dir, templates_path, temp_dir, temp_templates,
+                 parse_rule, q,
                  remarks='', ssh_timeout=5,
                  execute_timeout=20):
-        super().__init__(ip, port, user, password, command, ssh_timeout, execute_timeout)
+        super().__init__(ip, port, user, password, command, q, ssh_timeout, execute_timeout)
         self.target_dir = target_dir
         self.templates_path = templates_path
         self.temp_dir = temp_dir
@@ -176,7 +182,6 @@ class Generator_md(Ssh):
             data = re.sub('\n', '<br>', data)
             data = re.sub(' ', '&nbsp;', data)
             self.generator_normal_md(data, filename, command)
-
 
     def generator_normal_md(self, data, filename, command):
         try:
@@ -202,7 +207,8 @@ class Generator_md(Ssh):
             with open(f'{self.templates_path}/{filename}.md', 'r', encoding='utf-8')as f, open(
                     f'{self.temp_dir}/a_{filename}.md', 'w', encoding='utf-8') as f2:
                 f2.write(f.read().format(max_value))
-#异常分析并生成md
+
+    # 异常分析并生成md
     def generator_abnormal_md(self, data, filename, command):
         try:
             if data and command in self.parse_rule:
@@ -210,9 +216,9 @@ class Generator_md(Ssh):
                 description = self.parse_rule[command][1]
                 if command == 'uptime':
                     self.generator_a(filename, max_value)
-                    data = list(map(float,data.strip().split(':')[-1].split(',')))
+                    data = list(map(float, data.strip().split(':')[-1].split(',')))
                     if data[0] > max_value or data[1] > max_value or data[2] > max_value:
-                        with open(f'{self.temp_dir}/a_{filename}.md','a',encoding='utf-8') as f:
+                        with open(f'{self.temp_dir}/a_{filename}.md', 'a', encoding='utf-8') as f:
                             f.write(description.format(self.ip, data) + '\n')
                 elif command == 'df -hP':
                     result = ''
@@ -226,7 +232,7 @@ class Generator_md(Ssh):
                             if float(use_rate) > max_value:
                                 result = result + f'{mount_point} : {use_rate}%<br>'
                     if result:
-                        with open(f'{self.temp_dir}/a_{filename}.md','a',encoding='utf-8') as f:
+                        with open(f'{self.temp_dir}/a_{filename}.md', 'a', encoding='utf-8') as f:
                             f.write(description.format(self.ip, result) + '\n')
                 elif command == 'free -m':
                     self.generator_a(filename, max_value)
@@ -259,23 +265,26 @@ class Summary_data:
     def summary_normal(self):
         try:
             for filename in command.values():
-                with open(f'{self.temp_dir}/{filename}.md','r',encoding='utf-8') as f,open(f'{self.target_dir}/{self.alldata_name}.md','a',encoding='utf-8') as f2:
-                    f2.write(f.read()+'\n')
+                with open(f'{self.temp_dir}/{filename}.md', 'r', encoding='utf-8') as f, open(
+                        f'{self.target_dir}/{self.alldata_name}.md', 'a', encoding='utf-8') as f2:
+                    f2.write(f.read() + '\n')
         except Exception as e:
             logging.error(f'汇总md错误,message:{e}')
 
-    def summary_abnormal(self, pc_count, alldata_name):
+    def summary_abnormal(self, pc_count, err_pc_count, err_pc_list, alldata_name):
         ivo = [x for x in self.parse_rule]
         ivo.insert(0, '巡检报告')
         for key in ivo:
             if key != '巡检报告':
-                filename = command[key] +'.md'
+                filename = command[key] + '.md'
             else:
                 filename = '巡检报告.md'
-                with open(f'{self.templates_path}/{filename}','r',encoding='utf-8') as f,open(f'{self.temp_dir}/a_{filename}','w',encoding='utf-8') as f2:
-                    f2.write(f.read().format(time.strftime('%Y/%m/%d  %H:%M:%S'),pc_count, alldata_name))
+                with open(f'{self.templates_path}/{filename}', 'r', encoding='utf-8') as f, open(
+                        f'{self.temp_dir}/a_{filename}', 'w', encoding='utf-8') as f2:
+                    f2.write(f.read().format(time.strftime('%Y/%m/%d  %H:%M:%S'), pc_count, err_pc_count, err_pc_list, alldata_name))
 
-            with open(f'{self.temp_dir}/a_{filename}','r',encoding='utf-8')as f, open(f'{self.target_dir}/{self.data_name}.md','a',encoding='utf-8') as f2:
+            with open(f'{self.temp_dir}/a_{filename}', 'r', encoding='utf-8')as f, open(
+                    f'{self.target_dir}/{self.data_name}.md', 'a', encoding='utf-8') as f2:
                 data = f.read()
                 result = re.findall(r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b", data.split('\n')[-2])
                 if result:
@@ -289,18 +298,19 @@ class Summary_data:
             exts = ['markdown.extensions.extra', 'markdown.extensions.codehilite', 'markdown.extensions.tables',
                     'markdown.extensions.toc']
             allmd = [self.alldata_name, self.data_name]
-            with open(f'{self.templates_path}/css.css','r',encoding='utf-8') as css:
+            with open(f'{self.templates_path}/css.css', 'r', encoding='utf-8') as css:
                 css = css.read()
-            with open(f'{self.templates_path}/frame.html','r', encoding='utf-8') as frame:
+            with open(f'{self.templates_path}/frame.html', 'r', encoding='utf-8') as frame:
                 frame = frame.read()
             for filename in allmd:
                 with open(f'{self.target_dir}/{filename}.md', 'r', encoding='utf-8') as f:
                     markdownText = f.read()
                     h = markdown.markdown(markdownText, output_format='html5', extensions=exts)
                     with open(f'{self.html_dir}/{filename}.html', 'w', encoding='utf-8') as f1:
-                        f1.write(frame.format(css, h, alldata_name+'.html',data_name+'.html'))
+                        f1.write(frame.format(css, h, alldata_name + '.html', data_name + '.html'))
         except Exception as e:
             logging.error(f'Md_to_html异常,{e}')
+
 
 if __name__ == '__main__':
     logging.info('开始执行')
@@ -317,22 +327,34 @@ if __name__ == '__main__':
     parse_rule = config['parser_rule']
     data_name = config['data_name']
     pcinfo = basic_config.get_pcinfo()
-    p = Pool(4)
+    q = multiprocessing.Manager().Queue()
+    p = multiprocessing.Pool(multiprocessing.cpu_count())
     pc_count = len(pcinfo)
     for pcinfo in pcinfo:
         pcinfo = pcinfo.split()
         if len(pcinfo) == 5:
             generator_md = Generator_md(pcinfo[0], pcinfo[1], pcinfo[2], pcinfo[3], command, out_md_dir, templates_path,
-                                     temp_dir, temp_templates, parse_rule, remarks=pcinfo[4])
+                                        temp_dir, temp_templates, parse_rule, q, remarks=pcinfo[4])
         else:
             generator_md = Generator_md(pcinfo[0], pcinfo[1], pcinfo[2], pcinfo[3], command, out_md_dir, templates_path,
-                                     temp_dir, temp_templates, parse_rule)
+                                        temp_dir, temp_templates, parse_rule, q,)
         p.apply_async(generator_md.get_data, args=())
     p.close()
     p.join()
-    summary_data = Summary_data(temp_dir,out_md_dir, alldata_name, parse_rule, command, data_name, html_dir, templates_path)
+    err_pc_count = q.qsize()
+    err_pc_list = []
+    while True:
+        if q.empty():
+            break
+        else:
+            err_pc_list.append(q.get())
+    err_pc_list = '<br>'.join(err_pc_list)
+    if not err_pc_list:
+        err_pc_list='无'
+    summary_data = Summary_data(temp_dir, out_md_dir, alldata_name, parse_rule, command, data_name, html_dir,
+                                templates_path)
     summary_data.summary_normal()
-    summary_data.summary_abnormal(pc_count=pc_count, alldata_name=alldata_name)
+    summary_data.summary_abnormal(pc_count=pc_count, err_pc_count=err_pc_count, err_pc_list=err_pc_list, alldata_name=alldata_name)
     summary_data.md_to_html(data_name)
     endtime = time.time()
     print(f'耗时:{ endtime- start_time}')
