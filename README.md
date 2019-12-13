@@ -1,26 +1,26 @@
-### ����
-    �Զ���½������ȡCPU���ڴ桢���̵�����
-    ���������Զ�����Ѳ�챨�棬��HTML��ʽ���
+### 作用
+    1、通过SSH方式自动登陆机器获取CPU、内存、磁盘等数据，无需客户端
+    2、分析获取的数据自以HTML方式输出巡检报告，可以开启将报告发送到指定邮箱功能
     
-### ��Ҫ�ļ����ܣ�
-    inspection_report.py ������
-    config.yml �����ļ�
-    templates ģ��Ŀ¼�ļ�
-    pcinfo.txt ����IP���˿ڡ��û������롢����5��
+### 主要文件介绍：
+    inspection_report.py 主程序
+    config.yml 配置文件
+    templates 模板目录文件
+    pcinfo.txt 主机IP、端口、用户、密码、描述5列
 
 
-### ����
-    ����pcinfo.txt�ļ���д������IP���˿ڡ��û������롢����5�У��Կո�ָ���ÿ̨����һ��
-    ����192.168.1.1 22 root password db
-    ����inspection_report.py�����ȴ�ִ�н��������н��������ն˴�ӡ���н�������ʾ��ʱ
+### 运行
+    创建pcinfo.txt文件，写入主机IP、端口、用户、密码、描述5列，以空格分隔，每台机器一行
+    例：192.168.1.1 22 root password db
+    运行inspection_report.py，并等待执行结束，运行结束会在终端打印运行结束并显示耗时
 
-### ������
-    ���н����󣬻�����html_dirĿ¼����Ŀ¼�а�����Ѳ���¼����ϸ����
-    ���ɵ�����Ŀ¼��md_dir������ʱ�ļ�
+### 结果输出
+    运行结束后，会生成html_dir目录，改目录中包含了巡检记录和详细数据
+    生成的其他目录：md_dir等是临时文件
 
-> ����Ҫ�ֶ������ʱĿ¼��������ÿ������ǰ���Զ������ЩĿ¼
+> 不需要手动清空临时目录，主程序每次运行前会自动清空这些目录
 
-### ��������
+### 运行依赖
     python 3
     import paramiko
     import traceback
