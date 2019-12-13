@@ -9,6 +9,8 @@ import time
 import os
 import shutil
 import multiprocessing
+from modules import sendmail
+from sys import path
 
 logging.basicConfig(filename='debug.txt', format='[%(levelname)s %(asctime)s] %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S', level=logging.ERROR, filemode='a')
@@ -273,12 +275,13 @@ class Summary_data:
 
     def summary_abnormal(self, pc_count, err_pc_count, err_pc_list, alldata_name):
         ivo = [x for x in self.parse_rule]
-        ivo.insert(0, '巡检报告')
+        extand_name = '巡检报告'
+        ivo.insert(0,extand_name)
         for key in ivo:
-            if key != '巡检报告':
+            if key != extand_name:
                 filename = command[key] + '.md'
             else:
-                filename = '巡检报告.md'
+                filename = extand_name + '.md'
                 with open(f'{self.templates_path}/{filename}', 'r', encoding='utf-8') as f, open(
                         f'{self.temp_dir}/a_{filename}', 'w', encoding='utf-8') as f2:
                     f2.write(f.read().format(time.strftime('%Y/%m/%d  %H:%M:%S'), pc_count, err_pc_count, err_pc_list, alldata_name))
@@ -315,6 +318,7 @@ class Summary_data:
 if __name__ == '__main__':
     logging.info('开始执行')
     start_time = time.time()
+    path.append(os.path.abspath('./') + '\\modules')
     basic_config = Basic_config()
     config = basic_config.get_config()
     out_md_dir = basic_config.get_out_md_dir()
@@ -356,6 +360,13 @@ if __name__ == '__main__':
     summary_data.summary_normal()
     summary_data.summary_abnormal(pc_count=pc_count, err_pc_count=err_pc_count, err_pc_list=err_pc_list, alldata_name=alldata_name)
     summary_data.md_to_html(data_name)
+
+    # 发送邮件
+    if config['sendmail']['enable'] is True:
+        att1name = html_dir + f'/{data_name}.html'
+        att2name = html_dir + f'/{alldata_name}.html'
+        email_config = config['sendmail']
+        sendmail.sendmail_initial(email_config, att1name, att2name)
     endtime = time.time()
     print(f'耗时:{ endtime- start_time}')
     logging.info(f'耗时:{endtime - start_time}')

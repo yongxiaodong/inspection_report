@@ -25,4 +25,15 @@ templates: './templates'
 temp_dir: './temp'
 temp_templates: './templates/temp'
 alldata_name: '详细数据记录'
-data_name: '巡检记录'
+data_name: '巡检报告'
+
+sendmail:
+  enable: True
+  email_server: 'smtp.qq.com'
+  sender_qq: '12345678'
+  pwd: 'sdfshfvcdfgsfsdf'
+  sender_qq_mail: '12345678@qq.com'
+  receiver:
+    - '34566@qq.com'
+  email_title: '日巡检报告'
+  mail_content:  "你好，<p>附件是**平台{0}日巡检报告</p><p>巡检时间:{0}</p>"
