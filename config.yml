@@ -5,18 +5,29 @@ command:
     内存使用情况
   df -hP:
     磁盘使用情况
+  grep "^SELINUX=" /etc/selinux/config:
+    selinux优化情况
+  ulimit -n:
+    进程最大打开文件数
 
 
 parser_rule:
   uptime:
     - 5
-    - '{0} | {1} | 异常 | CPU利用率过高'
+    - '{0} | {1} | 异常 | CPU使用率过高'
   df -hP:
     - 80
-    - '{0} | {1} | 异常 | 磁盘空间利用率过高'
+    - '{0} | {1} | 异常 | 磁盘空间使用率过高'
   free -m:
     - 80
     - '{0} | {1} | 异常 | 内存使用率过高'
+  grep "^SELINUX=" /etc/selinux/config:
+    - disabled
+    - '{0} | {1} | 异常 | selinux状态错误'
+  ulimit -n:
+# Linux 默认1024，以下设置表示系统中当前配置应该最小达到2048，否则触发告警
+    - 2048
+    - '{0} | {1} | 异常 | 未优化进程最大打开文件数'
 
 out_md_dir: './md_dir'
 out_html_dir: './html_dir'
@@ -26,14 +37,16 @@ temp_dir: './temp'
 temp_templates: './templates/temp'
 alldata_name: '详细数据记录'
 data_name: '巡检报告'
+zip_name: '巡检报告.zip'
 
+# 发送邮件相关配置
 sendmail:
   enable: True
   email_server: 'smtp.qq.com'
-  sender_qq: '12345678'
-  pwd: 'sdfshfvcdfgsfsdf'
-  sender_qq_mail: '12345678@qq.com'
+  sender_qq: '123456'
+  pwd: 'sdfsdg'
+  sender_qq_mail: '123456@qq.com'
   receiver:
-    - '34566@qq.com'
+    - '123456@qq.com'
   email_title: '日巡检报告'
-  mail_content:  "你好，<p>附件是**平台{0}日巡检报告</p><p>巡检时间:{0}</p>"
+  mail_content:  "你好，<p>附件是{0}日巡检报告</p><p>巡检时间:{0}</p>"
