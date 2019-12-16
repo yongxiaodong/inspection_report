@@ -12,6 +12,7 @@ import multiprocessing
 from modules import sendmail
 from sys import path
 
+
 logging.basicConfig(filename='debug.txt', format='[%(levelname)s %(asctime)s] %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S', level=logging.ERROR, filemode='a')
 
@@ -178,6 +179,7 @@ class Generator_md(Ssh):
         self.ip = ip
         self.remarks = remarks
 
+# 获取到数据
     def get_data(self):
         for data, filename, command in self.execute_command():
             self.generator_abnormal_md(data, filename, command)
@@ -185,36 +187,38 @@ class Generator_md(Ssh):
             data = re.sub(' ', '&nbsp;', data)
             self.generator_normal_md(data, filename, command)
 
+# 从templates复制详细数据页面md到temp，并写入数据
     def generator_normal_md(self, data, filename, command):
         try:
             status = 0
-            if data:
-                if not os.path.exists(f'{self.temp_dir}/{filename}.md'):
-                    if os.path.exists(f'{self.temp_templates}/{filename}.md'):
-                        shutil.copy(f'{self.temp_templates}/{filename}.md', f'{self.temp_dir}/{filename}.md')
-                        status = 1
-                    else:
-                        logging.error(f'当前处理服务器:{self.ip},从{self.temp_templates}复制模板{filename}.md失败')
-                else:
+            if data and not os.path.exists(f'{self.temp_dir}/{filename}.md'):
+                if os.path.exists(f'{self.temp_templates}/{filename}.md'):
+                    shutil.copy(f'{self.temp_templates}/{filename}.md', f'{self.temp_dir}/{filename}.md')
                     status = 1
-                if status == 1:
-                    with open(f'{self.temp_dir}/{filename}.md', 'a', encoding='utf-8') as f:
-                        data = re.sub('\n', '<br>', data)
-                        f.write(f'{self.ip} | {data} | {self.remarks} | {command}' + '\n')
+                else:
+                    logging.error(f'当前处理服务器:{self.ip},从{self.temp_templates}复制模板{filename}.md失败')
+            else:
+                status = 1
+            if status == 1:
+                with open(f'{self.temp_dir}/{filename}.md', 'a', encoding='utf-8') as f:
+                    data = re.sub('\n', '<br>', data)
+                    f.write(f'{self.ip} | {data} | {self.remarks} | {command}' + '\n')
         except Exception as e:
             logging.error(f'generator_normal_md函数执行错误,message：{e}')
 
+# 判断temp目录中是否已经包含当前命令对应的a_md文件(异常文件)，不存在则从templates复制
     def generator_a(self, filename, max_value):
         if not os.path.exists(f'{self.temp_dir}/a_{filename}.md'):
             with open(f'{self.templates_path}/{filename}.md', 'r', encoding='utf-8')as f, open(
                     f'{self.temp_dir}/a_{filename}.md', 'w', encoding='utf-8') as f2:
                 f2.write(f.read().format(max_value))
 
-    # 异常分析并生成md
+    # 将获取到的数据进行异常分析并生成md
     def generator_abnormal_md(self, data, filename, command):
         try:
+            #判断返回的数据是否为真，并判断命令是否在config文件中
             if data and command in self.parse_rule:
-                max_value = float(self.parse_rule[command][0])
+                max_value = self.parse_rule[command][0]
                 description = self.parse_rule[command][1]
                 if command == 'uptime':
                     self.generator_a(filename, max_value)
@@ -248,9 +252,20 @@ class Generator_md(Ssh):
                         use_rate = "%.1f" % use_rate + '%'
                         with open(f'{self.temp_dir}/a_{filename}.md', 'a', encoding='utf-8') as f:
                             f.write(description.format(self.ip, use_rate) + '\n')
+                elif command == '''grep "^SELINUX=" /etc/selinux/config''':
+                    self.generator_a(filename, max_value)
+                    current_value = data.split('=')[1].strip('\n')
+                    if current_value != max_value:
+                        with open(f'{self.temp_dir}/a_{filename}.md', 'a', encoding='utf-8') as f:
+                            f.write(description.format(self.ip, current_value) + '\n')
+                elif command == 'ulimit -n':
+                    self.generator_a(filename, max_value)
+                    current_value = int(data)
+                    if current_value < max_value:
+                        with open(f'{self.temp_dir}/a_{filename}.md', 'a', encoding='utf-8') as f:
+                            f.write(description.format(self.ip, current_value) + '\n')
         except Exception as e:
             logging.error(f'异常分析并生成MD错误,command:{command},filename:{filename}message:{e}')
-
 
 # 数据汇总，将temp中的md 集中生成为2个MD，并转换为html
 class Summary_data:
@@ -276,7 +291,7 @@ class Summary_data:
     def summary_abnormal(self, pc_count, err_pc_count, err_pc_list, alldata_name):
         ivo = [x for x in self.parse_rule]
         extand_name = '巡检报告'
-        ivo.insert(0,extand_name)
+        ivo.insert(0, extand_name)
         for key in ivo:
             if key != extand_name:
                 filename = command[key] + '.md'
@@ -290,7 +305,7 @@ class Summary_data:
                     f'{self.target_dir}/{self.data_name}.md', 'a', encoding='utf-8') as f2:
                 data = f.read()
                 result = re.findall(r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b", data.split('\n')[-2])
-                if result:
+                if result or filename == '巡检报告.md':
                     f2.write(data + '\n')
                 else:
                     f2.write(data)
@@ -313,6 +328,7 @@ class Summary_data:
                         f1.write(frame.format(css, h, alldata_name + '.html', data_name + '.html'))
         except Exception as e:
             logging.error(f'Md_to_html异常,{e}')
+
 
 
 if __name__ == '__main__':
@@ -363,10 +379,12 @@ if __name__ == '__main__':
 
     # 发送邮件
     if config['sendmail']['enable'] is True:
-        att1name = html_dir + f'/{data_name}.html'
-        att2name = html_dir + f'/{alldata_name}.html'
         email_config = config['sendmail']
-        sendmail.sendmail_initial(email_config, att1name, att2name)
+        sendmail.sendmail_initial(email_config, html_dir, data_name+'.html', alldata_name+'.html')
+        # 打包为zip后再发送邮件
+        # zip_name = config['zip_name']
+        # sendmail.att_to_zip(f'{html_dir}', zip_name)
+        # sendmail.sendmail_initial(email_config, html_dir, zip_name)
     endtime = time.time()
-    print(f'耗时:{ endtime- start_time}')
+    print(f'耗时:{ endtime- start_time},日志请查看debug.txt')
     logging.info(f'耗时:{endtime - start_time}')

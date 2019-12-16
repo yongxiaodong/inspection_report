@@ -1,16 +1,26 @@
 # coding=utf-8
 
-import smtplib
-from email.mime.text import MIMEText
-from email.header import Header
 from smtplib import SMTP_SSL
 import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
+import os
+import zipfile
 
 
-def sendmail_initial(email_config, att1name, att2name):
+def att_to_zip(att_path, zip_name):
+    html_dir = os.path.abspath(att_path)
+    f = zipfile.ZipFile(f'{att_path}/{zip_name}', 'w', zipfile.ZIP_DEFLATED)
+
+    for dirpath, dirnames, filenames in os.walk(html_dir):
+        for filename in filenames:
+            if filename != zip_name:
+                f.write(os.path.join(dirpath, filename), filename)
+    f.close()
+
+
+def sendmail_initial(email_config, att_path, *args):
     # qq邮箱smtp服务器
     host_server = email_config['email_server']
     # sender_qq为发件人的qq号码
@@ -39,19 +49,21 @@ def sendmail_initial(email_config, att1name, att2name):
     # 邮件正文内容
     msg.attach(MIMEText(mail_content, 'html', 'utf-8'))
 
-    # 构造附件1
-    att1 = MIMEText(open(att1name, 'rb').read(), 'base64', 'utf-8')
-    att1["Content-Type"] = 'application/octet-stream'
-    # 这里的filename可以任意写，写什么名字，邮件中显示什么名字
-    att1.add_header("Content-Disposition" , 'attachment', filename=("gbk", "","巡检报告.html"))
-    msg.attach(att1)
+    # 构造附件
+    for att_name in args:
+        att_name1 = MIMEText(open(f'{att_path}/{att_name}', 'rb').read(), 'base64', 'utf-8')
+        att_name1["Content-Type"] = 'application/octet-stream'
+        # 这里的filename可以任意写，写什么名字，邮件中显示什么名字
+        # att_name.add_header("Content-Disposition" , 'attachment', filename=("gbk", "","巡检报告.html"))
+        att_name1.add_header("Content-Disposition", 'attachment', filename=("gbk", "", att_name))
+        msg.attach(att_name1)
 
     # 构造附件2，传送当前目录下的 runoob.txt 文件
 
-    att2 = MIMEText(open(att2name, 'rb').read(), 'base64', 'utf-8')
-    att2["Content-Type"] = 'application/octet-stream'
-    att2.add_header("Content-Disposition" , 'attachment',filename=("gbk", "","详细数据记录.html"))
-    msg.attach(att2)
+    # att2 = MIMEText(open(att2name, 'rb').read(), 'base64', 'utf-8')
+    # att2["Content-Type"] = 'application/octet-stream'
+    # att2.add_header("Content-Disposition" , 'attachment',filename=("gbk", "","详细数据记录.html"))
+    # msg.attach(att2)
 
     # ssl登录
     smtp = SMTP_SSL(host_server)
@@ -66,6 +78,6 @@ def sendmail_initial(email_config, att1name, att2name):
 if __name__ == '__main__':
     import yaml
     with open('../config.yml', 'r', encoding='utf-8') as f:
-        config = yaml.load(f.read(), Loader=yaml.FullLoader)
-    if config['sendmail']['enable'] is True:
-        sendmail_initial(config)
+        config = yaml.load(f.read(), Loader=yaml.FullLoader)['sendmail']
+    if config['enable'] is True:
+        sendmail_initial(config,'../html_dir/','巡检报告.html','详细数据记录.html')
