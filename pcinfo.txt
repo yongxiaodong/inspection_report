@@ -1,2 +1,2 @@
-192.168.1.22 22 root 1212520!@# test1
-192.168.1.30 22 root kuaiban test-server
+192.168.1.22 22 root 123123!@# test1
+192.168.1.30 22 root 123123 test-server
