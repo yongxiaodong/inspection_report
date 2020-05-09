@@ -1,2 +1,2 @@
-192.168.1.1 22 root passw test1
-192.168.1.2 22 root passw test2
+192.168.1.22 22 root 1212520!@# test1
+192.168.1.30 22 root kuaiban test-server

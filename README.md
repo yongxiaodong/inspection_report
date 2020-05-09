@@ -1,7 +1,7 @@
 ### 作用
     1、通过SSH方式自动登陆机器获取CPU、内存、磁盘等数据，无需客户端
     2、分析获取的数据自以HTML方式输出巡检报告，可以开启将报告发送到指定邮箱功能
-    
+
 ### 主要文件介绍：
     inspection_report.py 主程序
     config.yml 配置文件
@@ -34,3 +34,4 @@
     import shutil
     from multiprocessing import Pool
     
+    pip install paramiko markdown yaml

@@ -41,7 +41,7 @@ zip_name: '巡检报告.zip'
 
 # 发送邮件相关配置
 sendmail:
-  enable: True
+  enable: false
   email_server: 'smtp.qq.com'
   sender_qq: '123456'
   pwd: 'sdfsdg'
