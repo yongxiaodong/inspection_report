@@ -1,3 +1,7 @@
+### 演示地址
+    巡检报告输出：https://itgod.org/book/inspection_example/%E5%B7%A1%E6%A3%80%E6%8A%A5%E5%91%8A.md.html
+    巡检数据记录输出：https://itgod.org/book/inspection_example/%E5%B7%A1%E6%A3%80%E8%AF%A6%E7%BB%86%E6%95%B0%E6%8D%AE%E8%AE%B0%E5%BD%95.md.html
+
 ### 作用
     1、通过SSH方式自动登陆机器获取CPU、内存、磁盘等数据，无需客户端
     2、分析获取的数据自以HTML方式输出巡检报告，可以开启将报告发送到指定邮箱功能
