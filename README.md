@@ -2,20 +2,23 @@
     巡检报告输出：https://itgod.org/book/inspection_example/%E5%B7%A1%E6%A3%80%E6%8A%A5%E5%91%8A.md.html
     巡检数据记录输出：https://itgod.org/book/inspection_example/%E5%B7%A1%E6%A3%80%E8%AF%A6%E7%BB%86%E6%95%B0%E6%8D%AE%E8%AE%B0%E5%BD%95.md.html
 
-### 作用
-    1、通过SSH方式自动登陆机器获取CPU、内存、磁盘等数据，无需客户端
-    2、分析获取的数据自以HTML方式输出巡检报告，可以开启将报告发送到指定邮箱功能
+### 用途
+    1、通过SSH方式自动登陆机器获取CPU、内存、磁盘等数据（无需客户端）
+    2、分析获取的数据并以HTML方式汇总出 巡检报告 和 巡检的数据记录
+    3、可以开启发送邮件功能，通过与Crontab结合定时将汇总后的报告发送到指定邮箱
 
 ### 主要文件介绍：
     inspection_report.py 主程序
     config.yml 配置文件
     templates 模板目录文件
-    pcinfo.txt 主机IP、端口、用户、密码、描述5列
+    pcinfo.txt 其中包含 主机IP、端口、用户、密码、主机描述信息 5列，主机描述信息可任意填写
 
 
 ### 运行
-    创建pcinfo.txt文件，写入主机IP、端口、用户、密码、描述5列，以空格分隔，每台机器一行
-    例：192.168.1.1 22 root password db
+    创建pcinfo.txt文件，写入主机IP、端口、用户、密码、描述5列，以空格分隔。依次写入多行，每行表示一台主机
+    例：
+    192.168.1.1 22 root password db1
+    192.168.1.2 22 root password db2
     运行inspection_report.py，并等待执行结束，运行结束会在终端打印运行结束并显示耗时
 
 ### 结果输出
@@ -38,4 +41,5 @@
     import shutil
     from multiprocessing import Pool
     
+ ### 安装依赖
     pip install paramiko markdown yaml
