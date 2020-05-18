@@ -191,12 +191,12 @@ class Generator_md(Ssh):
     def generator_normal_md(self, data, filename, command):
         try:
             status = 0
-            if data and not os.path.exists(f'{self.temp_dir}/{filename}.md'):
+            if not os.path.exists(f'{self.temp_dir}/{filename}.md'):
                 if os.path.exists(f'{self.temp_templates}/{filename}.md'):
                     shutil.copy(f'{self.temp_templates}/{filename}.md', f'{self.temp_dir}/{filename}.md')
                     status = 1
                 else:
-                    logging.error(f'当前处理服务器:{self.ip},从{self.temp_templates}复制模板{filename}.md失败')
+                    logging.error(f'当前处理服务器:{self.ip},从{self.temp_templates}复制模板{filename}.md失败,请检查{self.temp_templates}中是否存在{filename}.md模板文件')
             else:
                 status = 1
             if status == 1:
@@ -217,7 +217,7 @@ class Generator_md(Ssh):
     def generator_abnormal_md(self, data, filename, command):
         try:
             #判断返回的数据是否为真，并判断命令是否在config文件中
-            if data and command in self.parse_rule:
+            if command in self.parse_rule:
                 max_value = self.parse_rule[command][0]
                 description = self.parse_rule[command][1]
                 if command == 'uptime':
@@ -264,6 +264,11 @@ class Generator_md(Ssh):
                     if current_value < max_value:
                         with open(f'{self.temp_dir}/a_{filename}.md', 'a', encoding='utf-8') as f:
                             f.write(description.format(self.ip, current_value) + '\n')
+                elif command == 'crontab -l':
+                    self.generator_a(filename, max_value)
+                elif command == 'cat /etc/rc.local':
+                    self.generator_a(filename, max_value)
+
         except Exception as e:
             logging.error(f'异常分析并生成MD错误,command:{command},filename:{filename}message:{e}')
 
@@ -309,7 +314,8 @@ class Summary_data:
                     f2.write(data + '\n')
                 else:
                     f2.write(data)
-                    f2.write('所有服务器检查正常|' + '\n\n')
+                    if not result:
+                        f2.write('所有服务器检查正常|' + '\n\n')
 
     def md_to_html(self, data_name):
         try:

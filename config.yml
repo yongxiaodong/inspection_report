@@ -9,6 +9,10 @@ command:
     selinux优化情况
   ulimit -n:
     进程最大打开文件数
+  crontab -l:
+    crontab记录
+  cat /etc/rc.local:
+    rclocal记录
 
 
 parser_rule:
@@ -16,7 +20,7 @@ parser_rule:
     - 5
     - '{0} | {1} | 异常 | CPU使用率过高'
   df -hP:
-    - 80
+    - 2
     - '{0} | {1} | 异常 | 磁盘空间使用率过高'
   free -m:
     - 80
@@ -28,6 +32,12 @@ parser_rule:
 # Linux 默认1024，以下设置表示系统中当前配置应该最小达到2048，否则触发告警
     - 2048
     - '{0} | {1} | 异常 | 未优化进程最大打开文件数'
+  crontab -l:
+    - '仅数据收集记录，不做判断'
+    - '仅数据收集记录，不做判断'
+  cat /etc/rc.local:
+    - '仅数据收集记录，不做判断'
+    - '仅数据收集记录，不做判断'
 
 out_md_dir: './md_dir'
 out_html_dir: './html_dir'
