@@ -14,7 +14,7 @@ from sys import path
 
 
 logging.basicConfig(filename='debug.txt', format='[%(levelname)s %(asctime)s] %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S', level=logging.ERROR, filemode='a')
+                    datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO, filemode='a')
 
 
 class Check_dir_status():
@@ -89,7 +89,7 @@ class Basic_config:
             pc_info = config['pcinfo']
             with open(pc_info, 'r', encoding='utf-8') as f:
                 pc_info = f.read()
-                return pc_info.split('\n')
+                return pc_info.strip().split('\n')
         except Exception as e:
             logging.error(f'加载{pcinfo}文件失败,message:{e}')
 
@@ -164,8 +164,7 @@ class Ssh:
 class Generator_md(Ssh):
     """操作Markdown、控制生成Markdown"""
 
-    def __init__(self, ip, port, user, password, command, target_dir, templates_path, temp_dir, temp_templates,
-                 parse_rule, q,
+    def __init__(self, ip, port, user, password,
                  remarks='', ssh_timeout=5,
                  execute_timeout=20):
         super().__init__(ip, port, user, password, command, q, ssh_timeout, execute_timeout)
@@ -275,14 +274,14 @@ class Generator_md(Ssh):
 # 数据汇总，将temp中的md 集中生成为2个MD，并转换为html
 class Summary_data:
     def __init__(self, *args):
-        self.temp_dir = args[0]
-        self.target_dir = args[1]
-        self.alldata_name = args[2]
-        self.parse_rule = args[3]
-        self.command = args[4]
-        self.data_name = args[5]
-        self.html_dir = args[6]
-        self.templates_path = args[7]
+        self.temp_dir = temp_dir
+        self.target_dir = target_dir
+        self.alldata_name = alldata_name
+        self.parse_rule = parse_rule
+        self.command = command
+        self.data_name = data_name
+        self.html_dir = html_dir
+        self.templates_path = templates_path
 
     def summary_normal(self):
         try:
@@ -293,7 +292,7 @@ class Summary_data:
         except Exception as e:
             logging.error(f'汇总md错误,message:{e}')
 
-    def summary_abnormal(self, pc_count, err_pc_count, err_pc_list, alldata_name):
+    def summary_abnormal(self):
         ivo = [x for x in self.parse_rule]
         extand_name = '巡检报告'
         ivo.insert(0, extand_name)
@@ -317,7 +316,7 @@ class Summary_data:
                     if not result:
                         f2.write('所有服务器检查正常|' + '\n\n')
 
-    def md_to_html(self, data_name):
+    def md_to_html(self):
         try:
             exts = ['markdown.extensions.extra', 'markdown.extensions.codehilite', 'markdown.extensions.tables',
                     'markdown.extensions.toc']
@@ -336,14 +335,13 @@ class Summary_data:
             logging.error(f'Md_to_html异常,{e}')
 
 
-
 if __name__ == '__main__':
     logging.info('开始执行')
     start_time = time.time()
     path.append(os.path.abspath('./') + '\\modules')
     basic_config = Basic_config()
     config = basic_config.get_config()
-    out_md_dir = basic_config.get_out_md_dir()
+    target_dir = basic_config.get_out_md_dir()
     templates_path = basic_config.get_templates_path()
     temp_dir = basic_config.get_temp_dir()
     temp_templates = basic_config.get_temp_templates()
@@ -359,11 +357,9 @@ if __name__ == '__main__':
     for pcinfo in pcinfo:
         pcinfo = pcinfo.split()
         if len(pcinfo) == 5:
-            generator_md = Generator_md(pcinfo[0], pcinfo[1], pcinfo[2], pcinfo[3], command, out_md_dir, templates_path,
-                                        temp_dir, temp_templates, parse_rule, q, remarks=pcinfo[4])
+            generator_md = Generator_md(pcinfo[0], pcinfo[1], pcinfo[2], pcinfo[3], remarks=pcinfo[4])
         else:
-            generator_md = Generator_md(pcinfo[0], pcinfo[1], pcinfo[2], pcinfo[3], command, out_md_dir, templates_path,
-                                        temp_dir, temp_templates, parse_rule, q,)
+            generator_md = Generator_md(pcinfo[0], pcinfo[1], pcinfo[2], pcinfo[3])
         p.apply_async(generator_md.get_data, args=())
     p.close()
     p.join()
@@ -376,12 +372,11 @@ if __name__ == '__main__':
             err_pc_list.append(q.get())
     err_pc_list = '<br>'.join(err_pc_list)
     if not err_pc_list:
-        err_pc_list='无'
-    summary_data = Summary_data(temp_dir, out_md_dir, alldata_name, parse_rule, command, data_name, html_dir,
-                                templates_path)
+        err_pc_list = '无'
+    summary_data = Summary_data()
     summary_data.summary_normal()
-    summary_data.summary_abnormal(pc_count=pc_count, err_pc_count=err_pc_count, err_pc_list=err_pc_list, alldata_name=alldata_name)
-    summary_data.md_to_html(data_name)
+    summary_data.summary_abnormal()
+    summary_data.md_to_html()
 
     # 发送邮件
     if config['sendmail']['enable'] is True:

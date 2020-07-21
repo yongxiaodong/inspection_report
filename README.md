@@ -18,7 +18,7 @@
     注意：首先你需要具备Python3环境
     
     1、git clone https://github.com/yongxiaodong/inspection_report.git
-    2、pip3 install paramiko markdown pyyaml
+    2、pip3 install -r required.txt
     3、修改pcinfo.txt文件，按需写入主机IP、端口、用户、密码、描述5列，以空格分隔。依次写入多行，每行表示一台主机
     例：
     192.168.1.1 22 root password db1
@@ -33,16 +33,5 @@
 > 不需要手动清空临时目录，主程序每次运行前会自动清空这些目录
 
 ### 运行依赖
-    python 3
-    import paramiko
-    import traceback
-    import socket
-    import re
-    import markdown
-    import logging
-    import yaml
-    import time
-    import os
-    import shutil
-    from multiprocessing import Pool
+    pip3 install -r required.txt
     
